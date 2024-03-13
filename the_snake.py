@@ -8,7 +8,7 @@ pygame.init()
 
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
-GRID_SIZE = 20
+GRID_SIZE = 160
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
@@ -32,7 +32,7 @@ APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
 
 # Скорость движения змейки:
-SPEED = 5
+SPEED = 1
 
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -81,9 +81,11 @@ class Snake(GameObject):
         if self.next_direction:
             self.direction = self.next_direction
             self.next_direction = None
+        return None
 
     def move(self):
         self.update_direction()
+        self.last = self.positions[-1]
 
         x_after_move = self.positions[0][0] + self.direction[0] * GRID_SIZE
         if x_after_move >= SCREEN_WIDTH or x_after_move < 0:
@@ -94,7 +96,6 @@ class Snake(GameObject):
             y_after_move = (y_after_move + SCREEN_HEIGHT) % SCREEN_HEIGHT
 
         self.positions.insert(0, (x_after_move, y_after_move))
-        self.last = self.positions[-1]
         self.positions = self.positions[0: self.length]
         return None
 
@@ -111,7 +112,7 @@ class Snake(GameObject):
         pygame.draw.rect(surface, BORDER_COLOR, head_rect, 1)
 
         # Затирание последнего сегмента
-        if self.last:
+        if self.last and self.last not in self.positions:
             last_rect = pygame.Rect(
                 (self.last[0], self.last[1]), (GRID_SIZE, GRID_SIZE)
             )
@@ -150,7 +151,8 @@ def apple_eated(snake, apple, start_time):
     time_played = round(time.time() - start_time, 1)
     print(
         f"You are playing for {time_played} sec,",
-        f"Current Score: {(snake.length - 1) * SPEED}"
+        f"Current Score: {(snake.length - 1) * SPEED}",
+        snake.length
     )
     new_apple_in_snake = True
     while new_apple_in_snake:
@@ -178,9 +180,13 @@ def main():
         clock.tick(SPEED)
         handle_keys(snake)
         snake.move()
+        apple.draw(screen)
+        snake.draw(screen)
+        pygame.display.update()
 
         if snake.get_head_position() == apple.position:
             if snake.length >= (GRID_WIDTH * GRID_HEIGHT - 1):
+                print("Your Score", (snake.length + 1) * SPEED)
                 print("Congratulations! Your Won the Snake!")
                 break
             else:
@@ -188,10 +194,6 @@ def main():
 
         if snake.get_head_position() in snake.positions[1:]:
             end_game(snake)
-
-        apple.draw(screen)
-        snake.draw(screen)
-        pygame.display.update()
 
 
 if __name__ == "__main__":
