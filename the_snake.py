@@ -8,7 +8,7 @@ pygame.init()
 
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
-GRID_SIZE = 160
+GRID_SIZE = 20
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
@@ -32,7 +32,7 @@ APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
 
 # Скорость движения змейки:
-SPEED = 1
+SPEED = 20
 
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -152,7 +152,6 @@ def apple_eated(snake, apple, start_time):
     print(
         f"You are playing for {time_played} sec,",
         f"Current Score: {(snake.length - 1) * SPEED}",
-        snake.length
     )
     new_apple_in_snake = True
     while new_apple_in_snake:
