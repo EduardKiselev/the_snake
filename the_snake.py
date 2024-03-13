@@ -166,9 +166,6 @@ def apple_eated(snake, apple, start_time):
     return None
 
 
-
-
-
 def end_game(snake):
     score = (snake.length - 1) * SPEED
     print("GAME OVER, your Score", score)
@@ -176,7 +173,7 @@ def end_game(snake):
     high_scores = read_high_score()
     if len(high_scores) < FALL_OF_FAME_LEN or score > high_scores[-1][1]:
         write_high_score(high_scores, score)
-    hall_of_fame_print()    
+    hall_of_fame_print()
     print("Starting New Game")
     snake.reset()
     return None
@@ -212,12 +209,13 @@ def write_high_score(high_scores, number):
             output.write(' '.join([player[0], str(player[1]), '\n']))
     return None
 
+
 def hall_of_fame_print():
     print('\nHall Of Fame\n')
     with open('highscores.txt', 'r') as file:
         for line in file.readlines():
             print(line, end='')
-    print('\n')        
+    print('\n')
     return None
 
 
