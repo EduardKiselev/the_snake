@@ -169,7 +169,7 @@ def handle_keys(game_object):
 def apple_eated(snake, apple, start_time):
     """Calculate new parametrs after snake ate apple. print some statistics"""
     snake.length += 1
-    time_played = round(time.time() - start_time, 1)
+    time_played = round(time() - start_time, 1)
     print(
         f"You are playing for {time_played} sec,",
         f"Current Score: {(snake.length - 1) * SPEED}",
