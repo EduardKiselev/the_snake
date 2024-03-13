@@ -32,7 +32,10 @@ APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
 
 # Скорость движения змейки:
-SPEED = 20
+SPEED = 10
+
+# Размер списка HighScores
+FALL_OF_FAME_LEN = 5
 
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -44,14 +47,20 @@ clock = pygame.time.Clock()
 
 class GameObject:
 
-    def __init__(self, body_color, position=SCREEN_CENTER) -> None:
+    def __init__(self, body_color=APPLE_COLOR, position=SCREEN_CENTER) -> None:
         self.body_color = body_color
         self.position = position
+
+    def draw(self, surface):
+        rect = pygame.Rect((self.position[0], self.position[1]),
+                           (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(surface, self.body_color, rect)
+        pygame.draw.rect(surface, BORDER_COLOR, rect, 1)
 
 
 class Apple(GameObject):
 
-    def __init__(self, body_color, position=[0, 0]) -> None:
+    def __init__(self, body_color=APPLE_COLOR, position=[0, 0]) -> None:
         super().__init__(body_color, position)
         self.flag = True
         self.position = self.randomize_position()
@@ -61,16 +70,11 @@ class Apple(GameObject):
         y_coord = randrange(0, SCREEN_HEIGHT, GRID_SIZE)
         return (x_coord, y_coord)
 
-    def draw(self, surface):
-        rect = pygame.Rect((self.position[0], self.position[1]),
-                           (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(surface, self.body_color, rect)
-        pygame.draw.rect(surface, BORDER_COLOR, rect, 1)
-
 
 class Snake(GameObject):
 
-    def __init__(self, body_color, start_position=SCREEN_CENTER) -> None:
+    def __init__(self, body_color=SNAKE_COLOR,
+                 start_position=SCREEN_CENTER) -> None:
         super().__init__(body_color, start_position)
         self.positions = [start_position]
         self.direction = RIGHT
@@ -122,7 +126,7 @@ class Snake(GameObject):
         return self.positions[0]
 
     def reset(self):
-        self.__init__(SNAKE_COLOR, SCREEN_CENTER)
+        self.__init__()
         return None
 
 
@@ -162,18 +166,66 @@ def apple_eated(snake, apple, start_time):
     return None
 
 
+
+
+
 def end_game(snake):
-    print("GAME OVER, your Score", (snake.length - 1) * SPEED)
+    score = (snake.length - 1) * SPEED
+    print("GAME OVER, your Score", score)
     screen.fill(BOARD_BACKGROUND_COLOR)
+    high_scores = read_high_score()
+    if len(high_scores) < FALL_OF_FAME_LEN or score > high_scores[-1][1]:
+        write_high_score(high_scores, score)
+    hall_of_fame_print()    
+    print("Starting New Game")
     snake.reset()
+    return None
+
+
+def read_high_score():
+    try:
+        with open('highscores.txt', 'r') as file:
+            high_scores = []
+            for line in file.readlines():
+                temp = line.split()
+                name, score = '_'.join(temp[:-1]), temp[-1]
+                high_scores.append((name, int(score)))
+    except FileNotFoundError:
+        with open('highscores.txt', 'x'):
+            high_scores = []
+    return high_scores
+
+
+def write_high_score(high_scores, number):
+    print('Congrats! You are in the Hall of Fame!\nEnter your nickname')
+    player_name = input().split()
+    if len(player_name) == 0:
+        player_name = 'No_Name'
+    else:
+        player_name = '_'.join(player_name)
+    high_scores.append((player_name, number))
+    high_scores = sorted(high_scores, key=lambda x: x[1], reverse=True)
+    if len(high_scores) > FALL_OF_FAME_LEN:
+        high_scores = high_scores[:FALL_OF_FAME_LEN]
+    with open('highscores.txt', 'w') as output:
+        for player in high_scores:
+            output.write(' '.join([player[0], str(player[1]), '\n']))
+    return None
+
+def hall_of_fame_print():
+    print('\nHall Of Fame\n')
+    with open('highscores.txt', 'r') as file:
+        for line in file.readlines():
+            print(line, end='')
+    print('\n')        
     return None
 
 
 def main():
     print("Start Game")
     start_time = time.time()
-    apple = Apple(APPLE_COLOR)
-    snake = Snake(SNAKE_COLOR)
+    apple = Apple()
+    snake = Snake()
 
     while True:
         clock.tick(SPEED)
@@ -185,8 +237,10 @@ def main():
 
         if snake.get_head_position() == apple.position:
             if snake.length >= (GRID_WIDTH * GRID_HEIGHT - 1):
-                print("Your Score", (snake.length + 1) * SPEED)
+                score = (snake.length + 1) * SPEED
+                print("Your Score", score)
                 print("Congratulations! Your Won the Snake!")
+                end_game(snake)
                 break
             else:
                 apple_eated(snake, apple, start_time)
