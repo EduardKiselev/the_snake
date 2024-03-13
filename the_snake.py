@@ -1,5 +1,7 @@
-# Помимо ТЗ реализовано highscores. Очки записываются и считываются в highscores.txt. 
-# Если файла не сущуствует он будет создан. Размер списка задан константой HALL_OF_FAME_LEN
+# Помимо ТЗ реализовано highscores.
+# Очки записываются и считываются в highscores.txt.
+# Если файла не сущуствует он будет создан.
+# Размер списка задан константой HALL_OF_FAME_LEN
 
 from random import randrange
 from time import time
