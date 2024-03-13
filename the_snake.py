@@ -1,5 +1,8 @@
+# Помимо ТЗ реализовано highscores. Очки записываются и считываются в highscores.txt. 
+# Если файла не сущуствует он будет создан. Размер списка задан константой HALL_OF_FAME_LEN
+
 from random import randrange
-import time
+from time import time
 
 import pygame
 
@@ -35,7 +38,7 @@ SNAKE_COLOR = (0, 255, 0)
 SPEED = 10
 
 # Размер списка HighScores
-FALL_OF_FAME_LEN = 5
+HALL_OF_FAME_LEN = 5
 
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -46,12 +49,14 @@ clock = pygame.time.Clock()
 
 
 class GameObject:
+    """Parent class for Snake and Apple"""
 
     def __init__(self, body_color=APPLE_COLOR, position=SCREEN_CENTER) -> None:
         self.body_color = body_color
         self.position = position
 
     def draw(self, surface):
+        """Drawing object in position"""
         rect = pygame.Rect((self.position[0], self.position[1]),
                            (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(surface, self.body_color, rect)
@@ -59,6 +64,7 @@ class GameObject:
 
 
 class Apple(GameObject):
+    """Class for apple"""
 
     def __init__(self, body_color=APPLE_COLOR, position=[0, 0]) -> None:
         super().__init__(body_color, position)
@@ -66,12 +72,14 @@ class Apple(GameObject):
         self.position = self.randomize_position()
 
     def randomize_position(self):
+        """Calculate position for new apple"""
         x_coord = randrange(0, SCREEN_WIDTH, GRID_SIZE)
         y_coord = randrange(0, SCREEN_HEIGHT, GRID_SIZE)
         return (x_coord, y_coord)
 
 
 class Snake(GameObject):
+    """Class for snake"""
 
     def __init__(self, body_color=SNAKE_COLOR,
                  start_position=SCREEN_CENTER) -> None:
@@ -82,12 +90,15 @@ class Snake(GameObject):
         self.length = 1
 
     def update_direction(self):
+        """Change moving direction of snake"""
         if self.next_direction:
             self.direction = self.next_direction
             self.next_direction = None
         return None
 
     def move(self):
+        """Calculating moving os snake. add one rectangle"""
+        """to the head in moving direction and cut the last"""
         self.update_direction()
         self.last = self.positions[-1]
 
@@ -104,7 +115,7 @@ class Snake(GameObject):
         return None
 
     def draw(self, surface):
-
+        """Draw the snake"""
         for pos in self.positions[:-1]:
             rect = pygame.Rect((pos[0], pos[1]), (GRID_SIZE, GRID_SIZE))
             pygame.draw.rect(surface, self.body_color, rect)
@@ -123,9 +134,11 @@ class Snake(GameObject):
             pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, last_rect)
 
     def get_head_position(self):
+        """Return head position of the snake"""
         return self.positions[0]
 
     def reset(self):
+        """Reset the game"""
         self.__init__()
         return None
 
@@ -139,6 +152,7 @@ player_moves = {
 
 
 def handle_keys(game_object):
+    """Control commands of the player"""
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -151,6 +165,7 @@ def handle_keys(game_object):
 
 
 def apple_eated(snake, apple, start_time):
+    """Calculate new parametrs after snake ate apple. print some statistics"""
     snake.length += 1
     time_played = round(time.time() - start_time, 1)
     print(
@@ -167,11 +182,12 @@ def apple_eated(snake, apple, start_time):
 
 
 def end_game(snake):
+    """Calculate final score. print fall of fame and reset game"""
     score = (snake.length - 1) * SPEED
     print("GAME OVER, your Score", score)
     screen.fill(BOARD_BACKGROUND_COLOR)
     high_scores = read_high_score()
-    if len(high_scores) < FALL_OF_FAME_LEN or score > high_scores[-1][1]:
+    if len(high_scores) < HALL_OF_FAME_LEN or score > high_scores[-1][1]:
         write_high_score(high_scores, score)
     hall_of_fame_print()
     print("Starting New Game")
@@ -180,6 +196,7 @@ def end_game(snake):
 
 
 def read_high_score():
+    """Read hall of fame from highscores.txt"""
     try:
         with open('highscores.txt', 'r') as file:
             high_scores = []
@@ -194,6 +211,7 @@ def read_high_score():
 
 
 def write_high_score(high_scores, number):
+    """Write new highscores to highscores.txt"""
     print('Congrats! You are in the Hall of Fame!\nEnter your nickname')
     player_name = input().split()
     if len(player_name) == 0:
@@ -202,8 +220,8 @@ def write_high_score(high_scores, number):
         player_name = '_'.join(player_name)
     high_scores.append((player_name, number))
     high_scores = sorted(high_scores, key=lambda x: x[1], reverse=True)
-    if len(high_scores) > FALL_OF_FAME_LEN:
-        high_scores = high_scores[:FALL_OF_FAME_LEN]
+    if len(high_scores) > HALL_OF_FAME_LEN:
+        high_scores = high_scores[:HALL_OF_FAME_LEN]
     with open('highscores.txt', 'w') as output:
         for player in high_scores:
             output.write(' '.join([player[0], str(player[1]), '\n']))
@@ -211,6 +229,7 @@ def write_high_score(high_scores, number):
 
 
 def hall_of_fame_print():
+    """Print hall of fame"""
     print('\nHall Of Fame\n')
     with open('highscores.txt', 'r') as file:
         for line in file.readlines():
@@ -220,8 +239,9 @@ def hall_of_fame_print():
 
 
 def main():
+    """Main function. Create apple and snake, then main cycle with the game"""
     print("Start Game")
-    start_time = time.time()
+    start_time = time()
     apple = Apple()
     snake = Snake()
 
@@ -237,7 +257,7 @@ def main():
             if snake.length >= (GRID_WIDTH * GRID_HEIGHT - 1):
                 score = (snake.length + 1) * SPEED
                 print("Your Score", score)
-                print("Congratulations! Your Won the Snake!")
+                print("Congratulations! You Won the Snake!")
                 end_game(snake)
                 break
             else:
