@@ -27,13 +27,10 @@ DOWN = (0, 1)
 LEFT = (-1, 0)
 RIGHT = (1, 0)
 
-# Цвет фона - черный:
+# задание цвета
 BOARD_BACKGROUND_COLOR = (0, 0, 0)
-# Цвет границы ячейки
 BORDER_COLOR = (93, 216, 228)
-# Цвет яблока
 APPLE_COLOR = (255, 0, 0)
-# Цвет змейки
 SNAKE_COLOR = (0, 255, 0)
 
 # Скорость движения змейки:
@@ -57,12 +54,18 @@ class GameObject:
         self.body_color = body_color
         self.position = position
 
-    def draw(self, surface):
-        """Drawing object in position"""
-        rect = pygame.Rect((self.position[0], self.position[1]),
-                           (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(surface, self.body_color, rect)
-        pygame.draw.rect(surface, BORDER_COLOR, rect, 1)
+    def draw(self, surface, x=None, y=None,
+             body_color=None, back_ground_color=None):
+        """Drawing rectangle in position x,y sizeof GRID_SIZE*GRID_SIZE"""
+        if x is None or y is None:
+            x, y = self.position[0], self.position[1]
+        if body_color is None:
+            body_color = self.body_color
+            back_ground_color = BORDER_COLOR
+
+        rect = pygame.Rect((x, y), (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(surface, body_color, rect)
+        pygame.draw.rect(surface, back_ground_color, rect, 1)
 
 
 class Apple(GameObject):
@@ -99,41 +102,27 @@ class Snake(GameObject):
         return None
 
     def move(self):
-        """Calculating moving os snake. add one rectangle"""
+        """Calculate moving of snake. add one rectangle"""
         """to the head in moving direction and cut the last"""
         self.update_direction()
         self.last = self.positions[-1]
-
-        x_after_move = self.positions[0][0] + self.direction[0] * GRID_SIZE
-        if x_after_move >= SCREEN_WIDTH or x_after_move < 0:
-            x_after_move = (x_after_move + SCREEN_WIDTH) % SCREEN_WIDTH
-
-        y_after_move = self.positions[0][1] + self.direction[1] * GRID_SIZE
-        if y_after_move >= SCREEN_HEIGHT or y_after_move < 0:
-            y_after_move = (y_after_move + SCREEN_HEIGHT) % SCREEN_HEIGHT
-
+        x_after_move = (self.positions[0][0] + self.direction[0] * GRID_SIZE
+                        + SCREEN_WIDTH) % SCREEN_WIDTH
+        y_after_move = (self.positions[0][1] + self.direction[1] * GRID_SIZE
+                        + SCREEN_HEIGHT) % SCREEN_HEIGHT
         self.positions.insert(0, (x_after_move, y_after_move))
         self.positions = self.positions[0: self.length]
         return None
 
-    def draw(self, surface):
+    def draw_snake(self, surface):
         """Draw the snake"""
-        for pos in self.positions[:-1]:
-            rect = pygame.Rect((pos[0], pos[1]), (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(surface, self.body_color, rect)
-            pygame.draw.rect(surface, BORDER_COLOR, rect, 1)
-
-        # Отрисовка головы змейки
-        head_rect = pygame.Rect(self.positions[0], (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(surface, self.body_color, head_rect)
-        pygame.draw.rect(surface, BORDER_COLOR, head_rect, 1)
-
-        # Затирание последнего сегмента
+        # Рисуем змейку
+        for pos in self.positions:
+            Snake.draw(self, surface, pos[0], pos[1])
+        # Затирание последнего сегмент (хвост)
         if self.last and self.last not in self.positions:
-            last_rect = pygame.Rect(
-                (self.last[0], self.last[1]), (GRID_SIZE, GRID_SIZE)
-            )
-            pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, last_rect)
+            Snake.draw(self, surface, self.last[0], self.last[1],
+                       BOARD_BACKGROUND_COLOR, BOARD_BACKGROUND_COLOR)
 
     def get_head_position(self):
         """Return head position of the snake"""
@@ -252,7 +241,7 @@ def main():
         handle_keys(snake)
         snake.move()
         apple.draw(screen)
-        snake.draw(screen)
+        snake.draw_snake(screen)
         pygame.display.update()
 
         if snake.get_head_position() == apple.position:
