@@ -17,10 +17,7 @@ GRID_SIZE = 20
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
-SCREEN_CENTER = (
-    SCREEN_WIDTH // GRID_SIZE // 2 * GRID_SIZE,
-    SCREEN_HEIGHT // GRID_SIZE // 2 * GRID_SIZE,
-)
+
 # Направления движения:
 UP = (0, -1)
 DOWN = (0, 1)
@@ -43,56 +40,90 @@ HALL_OF_FAME_LEN = 5
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 pygame.display.set_caption("Змейка")
 screen.fill(BOARD_BACKGROUND_COLOR)
-
 clock = pygame.time.Clock()
+
+
+class Point:
+    """class for points in the board"""
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __eq__(self, other):
+        """Method to compare for equality Points"""
+        if isinstance(other, Point):
+            if self.x == other.x and self.y == other.y:
+                return True
+            else:
+                return False
+        else:
+            return NotImplemented
+
+
+screen_center = Point(
+    SCREEN_WIDTH // GRID_SIZE // 2 * GRID_SIZE,
+    SCREEN_HEIGHT // GRID_SIZE // 2 * GRID_SIZE,
+)
+
+
+class Square:
+    """class for initialize different type of squares in the board"""
+
+    def __init__(self, body_color, border_color):
+        self.body_color = body_color
+        self.border_color = border_color
 
 
 class GameObject:
     """Parent class for Snake and Apple"""
 
-    def __init__(self, body_color=APPLE_COLOR, position=SCREEN_CENTER) -> None:
-        self.body_color = body_color
+    def __init__(self, img=None, position=screen_center) -> None:
         self.position = position
+        self.img = img
+        self.body_color = None  # Заглушка для теста
 
-    def draw(self, surface, x=None, y=None,
-             body_color=None, back_ground_color=None):
+    def draw(self, surface, point: Point = None,
+             square: Square = None):
         """Drawing rectangle in position x,y sizeof GRID_SIZE*GRID_SIZE"""
-        if x is None or y is None:
-            x, y = self.position[0], self.position[1]
-        if body_color is None:
-            body_color = self.body_color
-            back_ground_color = BORDER_COLOR
-
-        rect = pygame.Rect((x, y), (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(surface, body_color, rect)
-        pygame.draw.rect(surface, back_ground_color, rect, 1)
+        if point is None:
+            point = self.position
+        if square is None:
+            square = self.img
+        rect = pygame.Rect((point.x, point.y), (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(surface, square.body_color, rect)
+        pygame.draw.rect(surface, square.border_color, rect, 1)
 
 
 class Apple(GameObject):
     """Class for apple"""
 
-    def __init__(self, body_color=APPLE_COLOR, position=[0, 0]) -> None:
-        super().__init__(body_color, position)
+    def __init__(self, img=Square(APPLE_COLOR, BORDER_COLOR), position=None):
+        super().__init__(img, position)
         self.flag = True
         self.position = self.randomize_position()
+        self.body_color = None  # заглушка для теста
 
     def randomize_position(self):
         """Calculate position for new apple"""
         x_coord = randrange(0, SCREEN_WIDTH, GRID_SIZE)
         y_coord = randrange(0, SCREEN_HEIGHT, GRID_SIZE)
-        return (x_coord, y_coord)
+        return Point(x_coord, y_coord)
 
 
 class Snake(GameObject):
     """Class for snake"""
 
-    def __init__(self, body_color=SNAKE_COLOR,
-                 start_position=SCREEN_CENTER) -> None:
-        super().__init__(body_color, start_position)
+    def __init__(self, image=Square(SNAKE_COLOR, BORDER_COLOR),
+                 start_position=screen_center) -> None:
+        super().__init__(image, start_position)
         self.positions = [start_position]
         self.direction = RIGHT
         self.next_direction = None
         self.length = 1
+        self.black_square = Square(BOARD_BACKGROUND_COLOR,
+                                   BOARD_BACKGROUND_COLOR)
+        self.body_color = None  # Заглушка для теста
 
     def update_direction(self):
         """Change moving direction of snake"""
@@ -106,11 +137,11 @@ class Snake(GameObject):
         """to the head in moving direction and cut the last"""
         self.update_direction()
         self.last = self.positions[-1]
-        x_after_move = (self.positions[0][0] + self.direction[0] * GRID_SIZE
+        x_after_move = (self.positions[0].x + self.direction[0] * GRID_SIZE
                         + SCREEN_WIDTH) % SCREEN_WIDTH
-        y_after_move = (self.positions[0][1] + self.direction[1] * GRID_SIZE
+        y_after_move = (self.positions[0].y + self.direction[1] * GRID_SIZE
                         + SCREEN_HEIGHT) % SCREEN_HEIGHT
-        self.positions.insert(0, (x_after_move, y_after_move))
+        self.positions.insert(0, Point(x_after_move, y_after_move))
         self.positions = self.positions[0: self.length]
         return None
 
@@ -118,11 +149,10 @@ class Snake(GameObject):
         """Draw the snake"""
         # Рисуем змейку
         for pos in self.positions:
-            Snake.draw(self, surface, pos[0], pos[1])
+            Snake.draw(self, surface, pos)
         # Затирание последнего сегмент (хвост)
         if self.last and self.last not in self.positions:
-            Snake.draw(self, surface, self.last[0], self.last[1],
-                       BOARD_BACKGROUND_COLOR, BOARD_BACKGROUND_COLOR)
+            Snake.draw(self, surface, self.last, self.black_square)
 
     def get_head_position(self):
         """Return head position of the snake"""
@@ -243,7 +273,6 @@ def main():
         apple.draw(screen)
         snake.draw_snake(screen)
         pygame.display.update()
-
         if snake.get_head_position() == apple.position:
             if snake.length >= (GRID_WIDTH * GRID_HEIGHT - 1):
                 score = (snake.length + 1) * SPEED
